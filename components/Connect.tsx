@@ -1,66 +1,68 @@
 import { profile } from "@/lib/content";
 import { Reveal } from "./Reveal";
-import { TilePlaceholder } from "./Placeholder";
+import { InlinePlaceholder } from "./Placeholder";
+import { DotDivider } from "./DotDivider";
 
 type ConnectLink = {
   label: string;
-  href: string;
+  href?: string;
   hint: string;
+  placeholder?: boolean;
 };
+
+const linkedinHandle = profile.linkedin.replace("https://www.linkedin.com", "").replace(/\/$/, "");
+const githubHandle = profile.github.replace("https://", "");
 
 export function Connect() {
   const links: ConnectLink[] = [
-    { label: "LinkedIn", href: profile.linkedin, hint: "Experience & recommendations" },
-    { label: "GitHub", href: profile.github, hint: "Code & repositories" },
+    { label: "LinkedIn", href: profile.linkedin, hint: linkedinHandle },
+    { label: "GitHub", href: profile.github, hint: githubHandle },
+    profile.email
+      ? { label: "Email", href: `mailto:${profile.email}`, hint: profile.email }
+      : { label: "Email", hint: "add email in lib/content.ts", placeholder: true },
+    profile.hasResume
+      ? { label: "Resume", href: "/resume.pdf", hint: "download here" }
+      : { label: "Resume", hint: "add public/resume.pdf", placeholder: true },
   ];
-  if (profile.email) {
-    links.push({ label: "Email", href: `mailto:${profile.email}`, hint: profile.email });
-  }
-  if (profile.hasResume) {
-    links.push({ label: "Resume", href: "/resume.pdf", hint: "Download PDF" });
-  }
 
   return (
-    <section id="connect" className="py-20 sm:py-28 border-t border-line">
-      <div className="mx-auto max-w-5xl px-6 sm:px-10">
-        <div className="grid sm:grid-cols-[1fr_2fr] gap-8 sm:gap-16">
-          <div>
-            <p className="text-sm text-muted">Connect</p>
-          </div>
-          <div>
-            <p className="text-2xl sm:text-3xl font-medium leading-snug mb-10">
-              Let&apos;s get in touch.
+    <section id="connect" className="border-t border-line">
+      <DotDivider />
+
+      <div className="py-16 sm:py-20">
+        <div className="px-6 sm:px-10">
+          <p className="text-sm text-muted mb-6">Connect</p>
+
+          <Reveal>
+            <p className="text-3xl sm:text-4xl font-semibold mb-12 sm:mb-16">
+              Let&apos;s get in touch!
             </p>
 
-            <div className="grid sm:grid-cols-2 gap-4">
+            <div className="grid sm:grid-cols-2 gap-x-16 gap-y-10 sm:gap-y-12 max-w-3xl">
               {links.map((l, i) => (
-                <Reveal key={l.label} delay={i * 80}>
-                  <a
-                    href={l.href}
-                    target={l.href.startsWith("mailto:") ? undefined : "_blank"}
-                    rel={l.href.startsWith("mailto:") ? undefined : "noopener noreferrer"}
-                    className="rounded-xl border border-line bg-card p-6 flex flex-col gap-1 hover:border-ink transition-colors"
-                  >
-                    <span className="font-semibold text-lg">{l.label}</span>
-                    <span className="text-sm text-muted">{l.hint}</span>
-                  </a>
+                <Reveal key={l.label} delay={i * 60}>
+                  {l.placeholder ? (
+                    <div>
+                      <p className="font-semibold text-lg">{l.label}</p>
+                      <InlinePlaceholder>{l.hint}</InlinePlaceholder>
+                    </div>
+                  ) : (
+                    <a
+                      href={l.href}
+                      target={l.href?.startsWith("mailto:") ? undefined : "_blank"}
+                      rel={l.href?.startsWith("mailto:") ? undefined : "noopener noreferrer"}
+                      className="group block"
+                    >
+                      <p className="font-semibold text-lg group-hover:text-accent transition-colors">
+                        {l.label}
+                      </p>
+                      <p className="text-sm text-muted mt-1">{l.hint}</p>
+                    </a>
+                  )}
                 </Reveal>
               ))}
-
-              {!profile.email && (
-                <TilePlaceholder
-                  label="Add email in lib/content.ts"
-                  className="py-10"
-                />
-              )}
-              {!profile.hasResume && (
-                <TilePlaceholder
-                  label="Add resume — public/resume.pdf"
-                  className="py-10"
-                />
-              )}
             </div>
-          </div>
+          </Reveal>
         </div>
       </div>
     </section>
