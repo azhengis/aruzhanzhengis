@@ -3,22 +3,20 @@
 import { useEffect, useRef } from "react";
 import { DOT_SHAPES, shapeAt, drawDotShape } from "@/lib/dotFigures";
 
-// A quiet, clearly-visible field of plain dots that, right under the
-// cursor, transform into small colored figures — stars, sparkles, rings,
-// pluses — each cell always showing the same figure so the field feels
-// consistent as you move through it. A tight, precise interaction rather
-// than a broad cluster. Never draws inside the content area — the text is
-// a no-go zone, not a backdrop.
-export function HeroDotField({ children }: { children: React.ReactNode }) {
+type Sparkle = { row: number; col: number; start: number; duration: number };
+
+// A quiet decorative strip of the same dot figures as the hero — cursor
+// still transforms the nearest one, and every so often, on its own, a
+// random dot elsewhere briefly sparkles to life and fades — so the strip
+// feels alive even before anyone touches it.
+export function DotDivider() {
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const contentRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const container = containerRef.current;
     const canvas = canvasRef.current;
-    const content = contentRef.current;
-    if (!container || !canvas || !content) return;
+    if (!container || !canvas) return;
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
@@ -26,14 +24,14 @@ export function HeroDotField({ children }: { children: React.ReactNode }) {
       "(prefers-reduced-motion: reduce)"
     ).matches;
 
-    const cellSize = 34;
-    const interactionRadius = 70;
-    const exclusionPad = 14;
+    const cellSize = 26;
+    const interactionRadius = 60;
     const mouse = { x: -9999, y: -9999 };
     let cols = 0;
     let rows = 0;
-    let pending = false;
     let raf = 0;
+    let sparkles: Sparkle[] = [];
+    let nextSpawn = 0;
 
     function resize() {
       const dpr = Math.min(window.devicePixelRatio || 1, 2);
@@ -45,30 +43,13 @@ export function HeroDotField({ children }: { children: React.ReactNode }) {
       canvas!.style.height = `${height}px`;
       cols = Math.ceil(width / cellSize) + 1;
       rows = Math.ceil(height / cellSize) + 1;
-      draw();
     }
 
-    function draw() {
+    function draw(time: number) {
       const dpr = Math.min(window.devicePixelRatio || 1, 2);
       ctx!.clearRect(0, 0, canvas!.width, canvas!.height);
       ctx!.save();
       ctx!.scale(dpr, dpr);
-
-      // Exclude per direct child (heading, meta row, button row, …) instead
-      // of one box around the whole block — a single bounding box would
-      // also swallow the empty margins beside short rows (like the button
-      // row) and the gaps between them, leaving dots missing where there's
-      // nothing to actually avoid.
-      const canvasRect = canvas!.getBoundingClientRect();
-      const excludeRects = Array.from(content!.children).map((child) => {
-        const r = (child as HTMLElement).getBoundingClientRect();
-        return {
-          left: r.left - canvasRect.left - exclusionPad,
-          right: r.right - canvasRect.left + exclusionPad,
-          top: r.top - canvasRect.top - exclusionPad,
-          bottom: r.bottom - canvasRect.top + exclusionPad,
-        };
-      });
 
       const style = getComputedStyle(container!);
       const dotColor = style.getPropertyValue("--ink-soft").trim() || "#666";
@@ -77,15 +58,21 @@ export function HeroDotField({ children }: { children: React.ReactNode }) {
       const lensB = style.getPropertyValue("--lens-b").trim() || "#a855f7";
       const colors = [accent, lensA, lensB, accent, lensA];
 
+      if (!reduceMotion && time >= nextSpawn && sparkles.length < 3 && cols > 0) {
+        sparkles.push({
+          row: Math.floor(Math.random() * rows),
+          col: Math.floor(Math.random() * cols),
+          start: time,
+          duration: 1300 + Math.random() * 900,
+        });
+        nextSpawn = time + 900 + Math.random() * 1500;
+      }
+      sparkles = sparkles.filter((s) => time - s.start < s.duration);
+
       for (let row = 0; row < rows; row++) {
         for (let col = 0; col < cols; col++) {
           const cx = col * cellSize;
           const cy = row * cellSize;
-
-          const insideContent = excludeRects.some(
-            (rect) => cx >= rect.left && cx <= rect.right && cy >= rect.top && cy <= rect.bottom
-          );
-          if (insideContent) continue;
 
           const dx = mouse.x - cx;
           const dy = mouse.y - cy;
@@ -94,60 +81,58 @@ export function HeroDotField({ children }: { children: React.ReactNode }) {
             ? 0
             : Math.max(0, 1 - dist / interactionRadius);
 
-          if (proximity < 0.15) {
-            ctx!.globalAlpha = 0.5;
+          const sparkle = sparkles.find((s) => s.row === row && s.col === col);
+          let sparkleT = 0;
+          if (sparkle) {
+            const local = (time - sparkle.start) / sparkle.duration;
+            sparkleT = Math.sin(local * Math.PI);
+          }
+
+          const t = Math.max(proximity > 0.15 ? (proximity - 0.15) / 0.85 : 0, sparkleT);
+
+          if (t <= 0.02) {
+            ctx!.globalAlpha = 0.4;
             ctx!.fillStyle = dotColor;
             ctx!.beginPath();
-            ctx!.arc(cx, cy, 2.2, 0, Math.PI * 2);
+            ctx!.arc(cx, cy, 1.8, 0, Math.PI * 2);
             ctx!.fill();
             continue;
           }
 
-          // Transform into a small figure — grows and brightens as the
-          // cursor gets closer, replacing the plain dot rather than just
-          // enlarging it. Each cell always resolves to the same figure and
-          // color, so the field feels consistent rather than random noise.
-          const t = (proximity - 0.15) / 0.85;
           const shapeIdx = (row * 7 + col * 13) % DOT_SHAPES.length;
           const shape = shapeAt(row, col);
           const color = colors[shapeIdx];
           ctx!.fillStyle = color;
           ctx!.strokeStyle = color;
-          ctx!.globalAlpha = 0.35 + t * 0.65;
-          drawDotShape(ctx!, shape, cx, cy, 2 + t * 7);
+          ctx!.globalAlpha = 0.3 + t * 0.7;
+          drawDotShape(ctx!, shape, cx, cy, 1.5 + t * 5.5);
         }
       }
       ctx!.restore();
-    }
-
-    function scheduleDraw() {
-      if (pending) return;
-      pending = true;
-      raf = requestAnimationFrame(() => {
-        pending = false;
-        draw();
-      });
+      if (!reduceMotion) raf = requestAnimationFrame(draw);
     }
 
     function handleMove(e: PointerEvent) {
       const rect = canvas!.getBoundingClientRect();
       mouse.x = e.clientX - rect.left;
       mouse.y = e.clientY - rect.top;
-      scheduleDraw();
     }
     function handleLeave() {
       mouse.x = -9999;
       mouse.y = -9999;
-      scheduleDraw();
     }
 
     resize();
+    draw(0);
+    if (!reduceMotion) raf = requestAnimationFrame(draw);
+
     container.addEventListener("pointermove", handleMove);
     container.addEventListener("pointerleave", handleLeave);
-
-    const ro = new ResizeObserver(resize);
+    const ro = new ResizeObserver(() => {
+      resize();
+      if (reduceMotion) draw(0);
+    });
     ro.observe(container);
-    ro.observe(content);
 
     return () => {
       cancelAnimationFrame(raf);
@@ -158,15 +143,8 @@ export function HeroDotField({ children }: { children: React.ReactNode }) {
   }, []);
 
   return (
-    <div ref={containerRef} className="relative">
-      <canvas
-        ref={canvasRef}
-        aria-hidden="true"
-        className="absolute inset-0 pointer-events-none"
-      />
-      <div ref={contentRef} className="relative z-10 w-fit max-w-full">
-        {children}
-      </div>
+    <div ref={containerRef} className="relative h-24 sm:h-28 overflow-hidden">
+      <canvas ref={canvasRef} aria-hidden="true" className="absolute inset-0" />
     </div>
   );
 }

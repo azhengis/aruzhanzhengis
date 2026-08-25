@@ -22,9 +22,13 @@ export const taglineLead = "I build software.";
 export const taglineRest =
   " I also chase hackathon deadlines, and race personal bests on foot and on skis.";
 
-// Short bio for the About section — from your LinkedIn About.
-export const bio =
-  "Hi! I'm Aruzhan Zhengis, a senior studying Computer Science at DePaul University. With experience in hackathons and hands-on development, I'm passionate about app building, AI integration, and project management.";
+// About bio — from your LinkedIn About. `bioLead` renders bold and
+// full-color (with the DePaul logo inline), `bioRest` renders muted, same
+// size — same two-tone treatment as the hero statement.
+export const bioLead =
+  "Hi! I'm Aruzhan Zhengis, a senior studying Computer Science at DePaul University";
+export const bioRest =
+  " With experience in hackathons and hands-on development, I'm passionate about app building, AI integration, and project management.";
 
 // Interests — shown as plain tags in the About section.
 export const interests = ["Skiing", "Running", "Formula 1", "Music"];
@@ -35,11 +39,11 @@ export const interests = ["Skiing", "Running", "Formula 1", "Music"];
 // so each photo scrolls at its own natural aspect ratio (not cropped to a
 // fixed frame). Order here is the scroll order.
 export const photos = [
-  { src: "/photos/ski-1.jpg" as string | null, alt: "Skiing", width: 1200, height: 1600 },
-  { src: "/photos/run-1.jpg" as string | null, alt: "Running", width: 1200, height: 1600 },
-  { src: "/photos/f1-1.jpg" as string | null, alt: "Formula 1", width: 1600, height: 1200 },
-  { src: "/photos/run-2.jpg" as string | null, alt: "Running", width: 1600, height: 1067 },
-  { src: "/photos/f1-2.jpg" as string | null, alt: "Formula 1", width: 1200, height: 1600 },
+  { src: "/photos/ski-1.jpg" as string | null, alt: "Skiing", width: 750, height: 1000 },
+  { src: "/photos/run-1.jpg" as string | null, alt: "Running", width: 750, height: 1000 },
+  { src: "/photos/f1-1.jpg" as string | null, alt: "Formula 1", width: 1333, height: 1000 },
+  { src: "/photos/run-2.jpg" as string | null, alt: "Running", width: 1499, height: 1000 },
+  { src: "/photos/f1-2.jpg" as string | null, alt: "Formula 1", width: 750, height: 1000 },
   { src: null as string | null, alt: "Music", width: 1200, height: 1600 },
 ];
 
