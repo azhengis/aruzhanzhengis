@@ -14,7 +14,7 @@ export function About() {
           <p className="text-sm text-muted mb-6">About</p>
 
           <Reveal>
-            <p className="text-3xl sm:text-4xl font-medium leading-snug max-w-4xl">
+            <p className="text-3xl sm:text-4xl font-medium leading-snug">
               <span className="text-ink">{bioLead}</span>
               <InlineLogoBadge domain="depaul.edu" alt="DePaul University" />
               <span className="text-ink">.</span>
