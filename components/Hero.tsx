@@ -1,22 +1,23 @@
-import { profile, tagline } from "@/lib/content";
+import { profile, taglineLead, taglineRest } from "@/lib/content";
 import { InlinePlaceholder } from "./Placeholder";
 import { ScrollCue } from "./ScrollCue";
 import { HeroDotField } from "./HeroDotField";
 
 export function Hero() {
   return (
-    <section id="top" className="pt-24 sm:pt-32 pb-20 sm:pb-24">
+    <section id="top" className="pt-10 sm:pt-14 pb-20 sm:pb-24">
       <HeroDotField>
-        <div className="mx-auto max-w-3xl px-6 sm:px-10">
+        <div className="max-w-2xl sm:max-w-3xl px-6 sm:px-10">
           <p className="text-sm text-muted mb-5 animate-tick">
             Hi, I&apos;m {profile.name}.
           </p>
 
           <h1
-            className="font-semibold leading-[1.15] tracking-[-0.01em] text-[clamp(1.9rem,4.6vw,3.25rem)] animate-tick"
+            className="font-semibold leading-[1.1] tracking-[-0.02em] text-[clamp(2.25rem,6vw,4.25rem)] animate-tick"
             style={{ animationDelay: "60ms" }}
           >
-            {tagline}
+            <span className="text-ink">{taglineLead}</span>
+            <span className="text-muted">{taglineRest}</span>
           </h1>
 
           <div className="mt-6 flex flex-wrap items-center gap-3 text-sm text-ink-soft">

@@ -3,22 +3,25 @@ import { photos } from "@/lib/content";
 import { TilePlaceholder } from "./Placeholder";
 
 // One continuously scrolling row of photos — list is duplicated once so the
-// loop from -50% back to 0% is seamless.
+// loop from -50% back to 0% is seamless. Each photo keeps its own natural
+// aspect ratio (scaled to the row's height) instead of being cropped into a
+// fixed frame.
 export function PhotoMarquee() {
   const items = [...photos, ...photos];
 
   return (
     <div className="relative h-64 sm:h-72 overflow-hidden group">
-      <div className="absolute inset-y-0 left-0 flex gap-3 animate-marquee-x group-hover:[animation-play-state:paused]">
+      <div className="absolute inset-y-0 left-0 flex items-center gap-3 animate-marquee-x group-hover:[animation-play-state:paused]">
         {items.map((photo, i) =>
           photo.src ? (
             <Image
               key={i}
               src={photo.src}
               alt={photo.alt}
-              width={320}
-              height={288}
-              className="h-full w-auto aspect-[4/5] object-cover rounded-2xl shrink-0"
+              width={photo.width}
+              height={photo.height}
+              className="h-full w-auto rounded-2xl shrink-0"
+              style={{ aspectRatio: `${photo.width} / ${photo.height}` }}
             />
           ) : (
             <TilePlaceholder

@@ -1,5 +1,6 @@
 import { bio, interests } from "@/lib/content";
 import { PhotoMarquee } from "./PhotoMarquee";
+import { Reveal } from "./Reveal";
 
 export function About() {
   return (
@@ -9,7 +10,7 @@ export function About() {
           <div>
             <p className="text-sm text-muted">About</p>
           </div>
-          <div>
+          <Reveal>
             <p className="text-lg leading-relaxed text-ink-soft max-w-xl">{bio}</p>
 
             <div className="mt-6 flex flex-wrap gap-2">
@@ -22,13 +23,13 @@ export function About() {
                 </span>
               ))}
             </div>
-          </div>
+          </Reveal>
         </div>
       </div>
 
-      <div className="mt-10">
+      <Reveal delay={120} className="mt-10">
         <PhotoMarquee />
-      </div>
+      </Reveal>
     </section>
   );
 }

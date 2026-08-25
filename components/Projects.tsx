@@ -1,5 +1,6 @@
 import { profile, projects } from "@/lib/content";
 import { TilePlaceholder } from "./Placeholder";
+import { Reveal } from "./Reveal";
 
 export function Projects() {
   return (
@@ -11,7 +12,7 @@ export function Projects() {
           </div>
           <div>
             {projects.length === 0 ? (
-              <div className="space-y-4">
+              <Reveal className="space-y-4">
                 <TilePlaceholder
                   label="Add projects in lib/content.ts (projects array)"
                   className="w-full py-12"
@@ -24,32 +25,34 @@ export function Projects() {
                 >
                   Browse repositories on GitHub
                 </a>
-              </div>
+              </Reveal>
             ) : (
               <div className="grid sm:grid-cols-2 gap-4">
-                {projects.map((p) => (
-                  <a
-                    key={p.name}
-                    href={p.href || undefined}
-                    target={p.href ? "_blank" : undefined}
-                    rel={p.href ? "noopener noreferrer" : undefined}
-                    className="rounded-xl border border-line bg-card p-6 flex flex-col gap-2 hover:border-ink transition-colors"
-                  >
-                    <div className="flex items-center justify-between">
-                      <span className="font-semibold text-lg">{p.name}</span>
-                      {p.tag && (
-                        <span
-                          className="text-xs px-2 py-0.5 rounded-full text-accent"
-                          style={{
-                            background: "color-mix(in srgb, var(--accent) 12%, transparent)",
-                          }}
-                        >
-                          {p.tag}
-                        </span>
-                      )}
-                    </div>
-                    <p className="text-ink-soft text-sm">{p.description}</p>
-                  </a>
+                {projects.map((p, i) => (
+                  <Reveal key={p.name} delay={i * 80}>
+                    <a
+                      href={p.href || undefined}
+                      target={p.href ? "_blank" : undefined}
+                      rel={p.href ? "noopener noreferrer" : undefined}
+                      className="rounded-xl border border-line bg-card p-6 flex flex-col gap-2 hover:border-ink transition-colors"
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="font-semibold text-lg">{p.name}</span>
+                        {p.tag && (
+                          <span
+                            className="text-xs px-2 py-0.5 rounded-full text-accent"
+                            style={{
+                              background:
+                                "color-mix(in srgb, var(--accent) 12%, transparent)",
+                            }}
+                          >
+                            {p.tag}
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-ink-soft text-sm">{p.description}</p>
+                    </a>
+                  </Reveal>
                 ))}
               </div>
             )}

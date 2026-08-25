@@ -2,20 +2,31 @@
 
 import { useEffect, useRef } from "react";
 
-const SHAPES = ["circle", "sparkle", "plus", "diamond", "ring"] as const;
+const SHAPES = ["star", "sparkle", "ring", "plus", "circle"] as const;
 type Shape = (typeof SHAPES)[number];
 
 function shapeAt(row: number, col: number): Shape {
   return SHAPES[(row * 7 + col * 13) % SHAPES.length];
 }
 
-function drawShape(
-  ctx: CanvasRenderingContext2D,
-  shape: Shape,
-  cx: number,
-  cy: number,
-  r: number
-) {
+function drawStar(ctx: CanvasRenderingContext2D, cx: number, cy: number, r: number) {
+  const inner = r * 0.45;
+  const points = 5;
+  const step = Math.PI / points;
+  let rot = -Math.PI / 2;
+  ctx.beginPath();
+  ctx.moveTo(cx + r * Math.cos(rot), cy + r * Math.sin(rot));
+  for (let i = 0; i < points; i++) {
+    rot += step;
+    ctx.lineTo(cx + inner * Math.cos(rot), cy + inner * Math.sin(rot));
+    rot += step;
+    ctx.lineTo(cx + r * Math.cos(rot), cy + r * Math.sin(rot));
+  }
+  ctx.closePath();
+  ctx.fill();
+}
+
+function drawShape(ctx: CanvasRenderingContext2D, shape: Shape, cx: number, cy: number, r: number) {
   switch (shape) {
     case "circle":
       ctx.beginPath();
@@ -25,24 +36,15 @@ function drawShape(
     case "ring":
       ctx.beginPath();
       ctx.arc(cx, cy, r, 0, Math.PI * 2);
-      ctx.lineWidth = Math.max(1, r * 0.35);
+      ctx.lineWidth = Math.max(1, r * 0.32);
       ctx.stroke();
       break;
     case "plus": {
-      const w = Math.max(1, r * 0.34);
+      const w = Math.max(1, r * 0.32);
       ctx.fillRect(cx - w / 2, cy - r, w, r * 2);
       ctx.fillRect(cx - r, cy - w / 2, r * 2, w);
       break;
     }
-    case "diamond":
-      ctx.beginPath();
-      ctx.moveTo(cx, cy - r);
-      ctx.lineTo(cx + r, cy);
-      ctx.lineTo(cx, cy + r);
-      ctx.lineTo(cx - r, cy);
-      ctx.closePath();
-      ctx.fill();
-      break;
     case "sparkle":
       ctx.beginPath();
       ctx.moveTo(cx, cy - r);
@@ -53,12 +55,18 @@ function drawShape(
       ctx.closePath();
       ctx.fill();
       break;
+    case "star":
+      drawStar(ctx, cx, cy, r);
+      break;
   }
 }
 
-// A quiet field of dots that, near the cursor, blooms into a scatter of small
-// shapes (stars, rings, diamonds…) rather than one uniform glow. Never draws
-// inside the content area — the text is a no-go zone, not a backdrop.
+// A quiet, clearly-visible field of plain dots that, right under the
+// cursor, transform into small colored figures — stars, sparkles, rings,
+// pluses — each cell always showing the same figure so the field feels
+// consistent as you move through it. A tight, precise interaction rather
+// than a broad cluster. Never draws inside the content area — the text is
+// a no-go zone, not a backdrop.
 export function HeroDotField({ children }: { children: React.ReactNode }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -77,8 +85,8 @@ export function HeroDotField({ children }: { children: React.ReactNode }) {
     ).matches;
 
     const cellSize = 34;
-    const interactionRadius = 130;
-    const exclusionPad = 20;
+    const interactionRadius = 70;
+    const exclusionPad = 14;
     const mouse = { x: -9999, y: -9999 };
     let cols = 0;
     let rows = 0;
@@ -104,17 +112,24 @@ export function HeroDotField({ children }: { children: React.ReactNode }) {
       ctx!.save();
       ctx!.scale(dpr, dpr);
 
+      // Exclude per direct child (heading, meta row, button row, …) instead
+      // of one box around the whole block — a single bounding box would
+      // also swallow the empty margins beside short rows (like the button
+      // row) and the gaps between them, leaving dots missing where there's
+      // nothing to actually avoid.
       const canvasRect = canvas!.getBoundingClientRect();
-      const contentRect = content!.getBoundingClientRect();
-      const exclude = {
-        left: contentRect.left - canvasRect.left - exclusionPad,
-        right: contentRect.right - canvasRect.left + exclusionPad,
-        top: contentRect.top - canvasRect.top - exclusionPad,
-        bottom: contentRect.bottom - canvasRect.top + exclusionPad,
-      };
+      const excludeRects = Array.from(content!.children).map((child) => {
+        const r = (child as HTMLElement).getBoundingClientRect();
+        return {
+          left: r.left - canvasRect.left - exclusionPad,
+          right: r.right - canvasRect.left + exclusionPad,
+          top: r.top - canvasRect.top - exclusionPad,
+          bottom: r.bottom - canvasRect.top + exclusionPad,
+        };
+      });
 
       const style = getComputedStyle(container!);
-      const muted = style.getPropertyValue("--muted").trim() || "#999";
+      const dotColor = style.getPropertyValue("--ink-soft").trim() || "#666";
       const accent = style.getPropertyValue("--accent").trim() || "#3452e1";
       const lensA = style.getPropertyValue("--lens-a").trim() || "#ff7a45";
       const lensB = style.getPropertyValue("--lens-b").trim() || "#a855f7";
@@ -125,14 +140,10 @@ export function HeroDotField({ children }: { children: React.ReactNode }) {
           const cx = col * cellSize;
           const cy = row * cellSize;
 
-          if (
-            cx >= exclude.left &&
-            cx <= exclude.right &&
-            cy >= exclude.top &&
-            cy <= exclude.bottom
-          ) {
-            continue;
-          }
+          const insideContent = excludeRects.some(
+            (rect) => cx >= rect.left && cx <= rect.right && cy >= rect.top && cy <= rect.bottom
+          );
+          if (insideContent) continue;
 
           const dx = mouse.x - cx;
           const dy = mouse.y - cy;
@@ -141,22 +152,27 @@ export function HeroDotField({ children }: { children: React.ReactNode }) {
             ? 0
             : Math.max(0, 1 - dist / interactionRadius);
 
-          if (proximity < 0.08) {
-            ctx!.globalAlpha = 0.25;
-            ctx!.fillStyle = muted;
+          if (proximity < 0.15) {
+            ctx!.globalAlpha = 0.5;
+            ctx!.fillStyle = dotColor;
             ctx!.beginPath();
-            ctx!.arc(cx, cy, 1.3, 0, Math.PI * 2);
+            ctx!.arc(cx, cy, 2.2, 0, Math.PI * 2);
             ctx!.fill();
             continue;
           }
 
+          // Transform into a small figure — grows and brightens as the
+          // cursor gets closer, replacing the plain dot rather than just
+          // enlarging it. Each cell always resolves to the same figure and
+          // color, so the field feels consistent rather than random noise.
+          const t = (proximity - 0.15) / 0.85;
           const shapeIdx = (row * 7 + col * 13) % SHAPES.length;
           const shape = shapeAt(row, col);
-          const r = 2 + proximity * 9;
-          ctx!.globalAlpha = 0.35 + proximity * 0.65;
-          ctx!.fillStyle = colors[shapeIdx];
-          ctx!.strokeStyle = colors[shapeIdx];
-          drawShape(ctx!, shape, cx, cy, r);
+          const color = colors[shapeIdx];
+          ctx!.fillStyle = color;
+          ctx!.strokeStyle = color;
+          ctx!.globalAlpha = 0.35 + t * 0.65;
+          drawShape(ctx!, shape, cx, cy, 2 + t * 7);
         }
       }
       ctx!.restore();
@@ -206,7 +222,7 @@ export function HeroDotField({ children }: { children: React.ReactNode }) {
         aria-hidden="true"
         className="absolute inset-0 pointer-events-none"
       />
-      <div ref={contentRef} className="relative z-10 w-fit max-w-full mx-auto">
+      <div ref={contentRef} className="relative z-10 w-fit max-w-full">
         {children}
       </div>
     </div>

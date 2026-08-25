@@ -2,26 +2,75 @@
 
 import { useEffect, useRef } from "react";
 
-// Solidness loop: 1 = crisp solid name, 0 = scattered halftone dots. Briefly
-// holds each state, then a plain linear opacity dissolve between them — a
-// steady fade, not an eased snap.
+function smoothstep(x: number) {
+  const t = Math.min(1, Math.max(0, x));
+  return t * t * (3 - 2 * t);
+}
+
+// Solidness loop: 1 = fully solid, 0 = small distinct bubbles. Briefly holds
+// each state, eased growth between.
 function solidness(tNorm: number) {
   const holdSolid = 0.15;
   const transOut = 0.35;
   const holdDots = 0.15;
   if (tNorm < holdSolid) return 1;
   if (tNorm < holdSolid + transOut) {
-    return 1 - (tNorm - holdSolid) / transOut;
+    return 1 - smoothstep((tNorm - holdSolid) / transOut);
   }
   if (tNorm < holdSolid + transOut + holdDots) return 0;
   const transIn = 1 - (holdSolid + transOut + holdDots);
-  return (tNorm - (holdSolid + transOut + holdDots)) / transIn;
+  return smoothstep((tNorm - (holdSolid + transOut + holdDots)) / transIn);
 }
 
-// Renders `text` edge-to-edge, crossfading between a crisp solid render (the
-// real font, full resolution) and a halftone dot scatter — a name that
-// periodically dissolves into dots and reforms, with dots swelling near the
-// cursor on top of that loop.
+// Separable box blur, two passes reused by the caller for a near-Gaussian
+// falloff — this is what turns a hard glyph edge into the multi-cell size
+// gradient the reference shows (dots shrink gradually over several cells
+// near a boundary, not just the outermost one).
+function boxBlur(data: Float32Array, w: number, h: number, radius: number) {
+  const size = radius * 2 + 1;
+  const tmp = new Float32Array(w * h);
+  for (let y = 0; y < h; y++) {
+    let sum = 0;
+    const rowOff = y * w;
+    for (let x = -radius; x <= radius; x++) {
+      sum += data[rowOff + Math.min(w - 1, Math.max(0, x))];
+    }
+    for (let x = 0; x < w; x++) {
+      tmp[rowOff + x] = sum / size;
+      const addX = Math.min(w - 1, x + radius + 1);
+      const subX = Math.max(0, x - radius);
+      sum += data[rowOff + addX] - data[rowOff + subX];
+    }
+  }
+  const out = new Float32Array(w * h);
+  for (let x = 0; x < w; x++) {
+    let sum = 0;
+    for (let y = -radius; y <= radius; y++) {
+      sum += tmp[Math.min(h - 1, Math.max(0, y)) * w + x];
+    }
+    for (let y = 0; y < h; y++) {
+      out[y * w + x] = sum / size;
+      const addY = Math.min(h - 1, y + radius + 1);
+      const subY = Math.max(0, y - radius);
+      sum += tmp[addY * w + x] - tmp[subY * w + x];
+    }
+  }
+  return out;
+}
+
+// Satoshi is self-hosted (see globals.css) so canvas can draw the same
+// typeface as the reference — a real Black weight, not a faked-bold stroke.
+const FONT_STACK = "'Satoshi', -apple-system, BlinkMacSystemFont, sans-serif";
+const FONT_WEIGHT = 900;
+const LETTER_SPACING = "-0.03em";
+const MASK_SUPERSAMPLE = 4;
+
+// Renders `text` as a grid of bubbles sized by a blurred density map of the
+// real glyphs (big in letter interiors, tapering gradually near edges — a
+// halftone screen, not random noise), then clips the whole field against
+// the actual font with destination-in so edge bubbles are cut by the true
+// letter boundary. Once bubbles grow large enough, the clipped result
+// converges to ordinary solid type.
 export function HalftoneName({ text }: { text: string }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -40,51 +89,79 @@ export function HalftoneName({ text }: { text: string }) {
 
     const mouse = { x: -9999, y: -9999 };
     let raf = 0;
-    let cellSize = 10;
+    let cellSize = 20;
     let cols = 0;
     let rows = 0;
-    let mask: Float32Array = new Float32Array(0);
     let fontPxSolid = 0;
     let canvasWidth = 0;
     let canvasHeight = 0;
+    let density: Float32Array = new Float32Array(0);
+    let maskCols = 0;
+    let maskRows = 0;
 
-    const PERIOD_MS = 9000;
+    const PERIOD_MS = 4000;
 
-    function buildMask() {
+    function buildDensity() {
+      const maskPixel = cellSize / MASK_SUPERSAMPLE;
+      maskCols = Math.ceil(canvasWidth / maskPixel);
+      maskRows = Math.ceil(canvasHeight / maskPixel);
+
+      const off = document.createElement("canvas");
+      off.width = maskCols;
+      off.height = maskRows;
+      const octx = off.getContext("2d")!;
+      octx.clearRect(0, 0, maskCols, maskRows);
+      octx.fillStyle = "#fff";
+      octx.textBaseline = "middle";
+      octx.textAlign = "center";
+      octx.letterSpacing = LETTER_SPACING;
+      octx.font = `${FONT_WEIGHT} ${fontPxSolid / maskPixel}px ${FONT_STACK}`;
+      octx.fillText(text, maskCols / 2, maskRows / 2);
+
+      const data = octx.getImageData(0, 0, maskCols, maskRows).data;
+      let raw = new Float32Array(maskCols * maskRows);
+      for (let i = 0; i < raw.length; i++) raw[i] = data[i * 4 + 3] / 255;
+
+      // A couple of blur passes turn the hard glyph edge into a smooth,
+      // multi-cell taper.
+      raw = boxBlur(raw, maskCols, maskRows, MASK_SUPERSAMPLE);
+      raw = boxBlur(raw, maskCols, maskRows, MASK_SUPERSAMPLE);
+      density = raw;
+    }
+
+    function densityAt(cx: number, cy: number) {
+      const maskPixel = cellSize / MASK_SUPERSAMPLE;
+      const mx = Math.min(maskCols - 1, Math.max(0, Math.round(cx / maskPixel)));
+      const my = Math.min(maskRows - 1, Math.max(0, Math.round(cy / maskPixel)));
+      return density[my * maskCols + mx];
+    }
+
+    function measure() {
       const dpr = Math.min(window.devicePixelRatio || 1, 2);
       canvasWidth = container!.clientWidth;
-      canvasHeight = Math.max(180, Math.round(canvasWidth * 0.32));
+      canvasHeight = Math.max(220, Math.round(canvasWidth * 0.4));
       canvas!.width = canvasWidth * dpr;
       canvas!.height = canvasHeight * dpr;
       canvas!.style.width = `${canvasWidth}px`;
       canvas!.style.height = `${canvasHeight}px`;
 
-      cellSize = Math.max(5, Math.round(canvasWidth / 160));
-      cols = Math.ceil(canvasWidth / cellSize);
-      rows = Math.ceil(canvasHeight / cellSize);
+      // Fine grid — a lot of bubbles, not a handful of big ones.
+      cellSize = Math.max(6, Math.round(canvasWidth / 150));
+      cols = Math.ceil(canvasWidth / cellSize) + 1;
+      rows = Math.ceil(canvasHeight / cellSize) + 1;
 
-      const off = document.createElement("canvas");
-      off.width = cols;
-      off.height = rows;
-      const octx = off.getContext("2d")!;
-      octx.clearRect(0, 0, cols, rows);
-      octx.fillStyle = "#fff";
-      octx.textBaseline = "middle";
-      octx.textAlign = "center";
-      let fontSizeCells = rows * 0.86;
-      octx.font = `900 ${fontSizeCells}px -apple-system, BlinkMacSystemFont, sans-serif`;
-      while (octx.measureText(text).width > cols * 0.96 && fontSizeCells > 4) {
-        fontSizeCells -= 1;
-        octx.font = `900 ${fontSizeCells}px -apple-system, BlinkMacSystemFont, sans-serif`;
+      ctx!.textBaseline = "middle";
+      ctx!.textAlign = "center";
+      ctx!.letterSpacing = LETTER_SPACING;
+      let fontPx = canvasHeight * 0.68;
+      ctx!.font = `${FONT_WEIGHT} ${fontPx}px ${FONT_STACK}`;
+      while (ctx!.measureText(text).width > canvasWidth * 0.99 && fontPx > 8) {
+        fontPx -= 1;
+        ctx!.font = `${FONT_WEIGHT} ${fontPx}px ${FONT_STACK}`;
       }
-      octx.fillText(text, cols / 2, rows / 2);
-      fontPxSolid = fontSizeCells * cellSize;
+      fontPxSolid = fontPx;
 
-      const data = octx.getImageData(0, 0, cols, rows).data;
-      mask = new Float32Array(cols * rows);
-      for (let i = 0; i < cols * rows; i++) {
-        mask[i] = data[i * 4 + 3] / 255;
-      }
+      buildDensity();
     }
 
     function draw(time: number) {
@@ -95,47 +172,64 @@ export function HalftoneName({ text }: { text: string }) {
 
       const style = getComputedStyle(container!);
       const inkColor = style.getPropertyValue("--ink").trim() || "#111";
-      ctx!.fillStyle = inkColor;
 
       const tNorm = reduceMotion ? 0 : (time % PERIOD_MS) / PERIOD_MS;
       const s = reduceMotion ? 1 : solidness(tNorm);
 
-      if (s > 0.01) {
-        ctx!.globalAlpha = s;
-        ctx!.textBaseline = "middle";
-        ctx!.textAlign = "center";
-        ctx!.font = `900 ${fontPxSolid}px -apple-system, BlinkMacSystemFont, sans-serif`;
-        ctx!.fillText(text, canvasWidth / 2, canvasHeight / 2);
-      }
+      const minR = cellSize * 0.45;
+      const maxR = cellSize * 0.9;
 
-      if (s < 0.99) {
-        const dotAlpha = 1 - s;
-        const minR = cellSize * 0.12;
-        const maxR = cellSize * 0.46;
+      // Cheap row-level bound — skip the wide blank margins above/below the
+      // text. Deliberately generous: at high s the growth term dominates
+      // regardless of density, and a density-based skip here could leave a
+      // true edge cell undrawn (the clip can only remove pixels, not add
+      // them), so precision is left entirely to the destination-in clip.
+      const padY = fontPxSolid * 0.8;
+      const bandTop = canvasHeight / 2 - padY;
+      const bandBottom = canvasHeight / 2 + padY;
 
-        for (let row = 0; row < rows; row++) {
-          for (let col = 0; col < cols; col++) {
-            const m = mask[row * cols + col];
-            if (m < 0.12) continue;
+      ctx!.globalCompositeOperation = "source-over";
+      ctx!.fillStyle = inkColor;
+      ctx!.globalAlpha = 1;
 
-            const cx = col * cellSize + cellSize / 2;
-            const cy = row * cellSize + cellSize / 2;
+      for (let row = 0; row < rows; row++) {
+        const cy = row * cellSize;
+        if (cy < bandTop || cy > bandBottom) continue;
 
-            const dx = mouse.x - cx;
-            const dy = mouse.y - cy;
-            const dist = Math.sqrt(dx * dx + dy * dy);
-            const proximity = Math.max(0, 1 - dist / 110);
+        for (let col = 0; col < cols; col++) {
+          const cx = col * cellSize;
 
-            // Dot size tracks ink density, so the dotted state reads at the
-            // same weight/shape as the solid render, not a thinner outline.
-            const radius = minR + (maxR - minR) * m + proximity * cellSize * 0.35;
-            ctx!.globalAlpha = Math.min(1, m * dotAlpha * (0.85 + proximity * 0.15));
-            ctx!.beginPath();
-            ctx!.arc(cx, cy, radius, 0, Math.PI * 2);
-            ctx!.fill();
-          }
+          const m = densityAt(cx, cy);
+
+          const dx = mouse.x - cx;
+          const dy = mouse.y - cy;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          const proximity = Math.max(0, 1 - dist / 110);
+
+          // At s=0 radius is density-proportional (the halftone gradient —
+          // big in letter interiors, tapering near edges). As s→1 every
+          // cell converges to the same maxR regardless of density, so the
+          // clip below resolves to a fully solid, uniformly-covered glyph
+          // rather than leaving faint under-grown edges.
+          const dotRadius = m * minR;
+          const radius = dotRadius + s * (maxR - dotRadius) + proximity * cellSize * 0.25;
+          if (radius < 0.5) continue;
+
+          ctx!.beginPath();
+          ctx!.arc(cx, cy, radius, 0, Math.PI * 2);
+          ctx!.fill();
         }
       }
+
+      // The clip: only the pixels the real font actually covers survive —
+      // this is what produces the scalloped edge as bubbles grow, and a
+      // perfectly clean silhouette once they're big enough to be solid.
+      ctx!.globalCompositeOperation = "destination-in";
+      ctx!.textBaseline = "middle";
+      ctx!.textAlign = "center";
+      ctx!.font = `${FONT_WEIGHT} ${fontPxSolid}px ${FONT_STACK}`;
+      ctx!.letterSpacing = LETTER_SPACING;
+      ctx!.fillText(text, canvasWidth / 2, canvasHeight / 2);
 
       ctx!.restore();
       if (!reduceMotion) raf = requestAnimationFrame(draw);
@@ -151,15 +245,28 @@ export function HalftoneName({ text }: { text: string }) {
       mouse.y = -9999;
     }
 
-    buildMask();
+    measure();
     draw(0);
     if (!reduceMotion) raf = requestAnimationFrame(draw);
+
+    // Canvas text doesn't wait for web fonts on its own — remeasure once
+    // Satoshi actually finishes loading so the density map and clip aren't
+    // built against the system fallback the whole time.
+    Promise.all([
+      document.fonts.load(`700 100px Satoshi`),
+      document.fonts.load(`900 100px Satoshi`),
+    ])
+      .then(() => {
+        measure();
+        if (reduceMotion) draw(0);
+      })
+      .catch(() => {});
 
     window.addEventListener("pointermove", handleMove);
     canvas.addEventListener("pointerleave", handleLeave);
 
     const ro = new ResizeObserver(() => {
-      buildMask();
+      measure();
       if (reduceMotion) draw(0);
     });
     ro.observe(container);
