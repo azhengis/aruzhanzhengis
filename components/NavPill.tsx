@@ -71,11 +71,47 @@ function AboutIcon(props: React.SVGProps<SVGSVGElement>) {
   );
 }
 
+function LeadershipIcon(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 20 20" fill="none" {...props}>
+      <path d="M4.5 2.5v15" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+      <path
+        d="M4.5 3.5h9l-2.2 2.8 2.2 2.8h-9"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+function ConnectIcon(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 20 20" fill="none" {...props}>
+      <path
+        d="M17.5 2.5 9.2 11"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M17.5 2.5 12 17.5l-2.8-6.5-6.5-2.8 15-5.7Z"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
 const NAV_ITEMS = [
   { id: "education", label: "Education", Icon: EducationIcon },
   { id: "career", label: "Career", Icon: CareerIcon },
+  { id: "leadership", label: "Leadership", Icon: LeadershipIcon },
   { id: "work", label: "Work", Icon: WorkIcon },
   { id: "about", label: "About", Icon: AboutIcon },
+  { id: "connect", label: "Connect", Icon: ConnectIcon },
 ];
 
 // A pill-shaped tab bar that tracks scroll position: whichever section sits

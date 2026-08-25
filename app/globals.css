@@ -151,21 +151,21 @@ body {
   }
 }
 
-.animate-marquee-x-precise {
-  animation: marquee-x-precise 16s linear infinite;
+.animate-marquee-x {
+  animation: marquee-x 9s linear infinite;
 }
 
-@keyframes marquee-x-precise {
+@keyframes marquee-x {
   from {
     transform: translateX(0);
   }
   to {
-    transform: translateX(calc(-1 * var(--marquee-distance, 0px)));
+    transform: translateX(-50%);
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .animate-marquee-x-precise {
+  .animate-marquee-x {
     animation: none;
   }
 }
