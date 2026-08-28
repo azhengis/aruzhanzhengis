@@ -105,6 +105,7 @@ export function HalftoneName({ text }: { text: string }) {
       const maskPixel = cellSize / MASK_SUPERSAMPLE;
       maskCols = Math.ceil(canvasWidth / maskPixel);
       maskRows = Math.ceil(canvasHeight / maskPixel);
+      if (maskCols <= 0 || maskRows <= 0) return;
 
       const off = document.createElement("canvas");
       off.width = maskCols;
@@ -139,6 +140,10 @@ export function HalftoneName({ text }: { text: string }) {
     function measure() {
       const dpr = Math.min(window.devicePixelRatio || 1, 2);
       canvasWidth = container!.clientWidth;
+      // Container isn't laid out yet (0 width) — bail out rather than call
+      // getImageData on a zero-sized canvas, which throws and can take the
+      // whole render down. The ResizeObserver fires again once it has size.
+      if (canvasWidth <= 0) return;
       canvasHeight = Math.max(220, Math.round(canvasWidth * 0.4));
       canvas!.width = canvasWidth * dpr;
       canvas!.height = canvasHeight * dpr;
