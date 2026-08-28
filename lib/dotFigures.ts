@@ -1,16 +1,30 @@
 // Shared figure set for interactive dot fields — the hero's cursor field and
 // any decorative dot dividers draw from the same shapes so the motif reads
 // as one system across the page.
-export const DOT_SHAPES = ["star", "sparkle", "ring", "plus", "circle"] as const;
+export const DOT_SHAPES = [
+  "star",
+  "sparkle",
+  "ring",
+  "plus",
+  "circle",
+  "oval",
+  "burst",
+] as const;
 export type DotShape = (typeof DOT_SHAPES)[number];
 
 export function shapeAt(row: number, col: number): DotShape {
   return DOT_SHAPES[(row * 7 + col * 13) % DOT_SHAPES.length];
 }
 
-function drawStar(ctx: CanvasRenderingContext2D, cx: number, cy: number, r: number) {
-  const inner = r * 0.45;
-  const points = 5;
+function drawStarPolygon(
+  ctx: CanvasRenderingContext2D,
+  cx: number,
+  cy: number,
+  r: number,
+  points: number,
+  innerRatio: number
+) {
+  const inner = r * innerRatio;
   const step = Math.PI / points;
   let rot = -Math.PI / 2;
   ctx.beginPath();
@@ -38,6 +52,11 @@ export function drawDotShape(
       ctx.arc(cx, cy, r, 0, Math.PI * 2);
       ctx.fill();
       break;
+    case "oval":
+      ctx.beginPath();
+      ctx.ellipse(cx, cy, r, r * 0.55, 0, 0, Math.PI * 2);
+      ctx.fill();
+      break;
     case "ring":
       ctx.beginPath();
       ctx.arc(cx, cy, r, 0, Math.PI * 2);
@@ -61,7 +80,11 @@ export function drawDotShape(
       ctx.fill();
       break;
     case "star":
-      drawStar(ctx, cx, cy, r);
+      drawStarPolygon(ctx, cx, cy, r, 5, 0.45);
+      break;
+    case "burst":
+      // A star with more points than "star" — a denser sparkle/asterisk burst.
+      drawStarPolygon(ctx, cx, cy, r, 8, 0.6);
       break;
   }
 }
