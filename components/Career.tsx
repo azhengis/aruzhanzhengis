@@ -3,18 +3,16 @@ import { RoleList } from "./RoleList";
 
 export function Career() {
   return (
-    <section id="career" className="py-20 sm:py-28 border-t border-line">
-      <div className="mx-auto max-w-5xl px-6 sm:px-10">
-        <div className="grid sm:grid-cols-[1fr_2fr] gap-8 sm:gap-16">
+    <section id="career" className="py-16 sm:py-20">
+      <div className="px-5 sm:px-8">
+        <div className="grid sm:grid-cols-[7rem_1fr] gap-6">
           <div>
-            <p className="text-sm text-muted">Career</p>
+            <p className="font-mono text-xs tracking-widest text-muted uppercase text-center">
+              Experience
+            </p>
           </div>
           <div>
-            <RoleList
-              label="Experience"
-              roles={experience}
-              emptyLabel="Add roles in lib/content.ts (experience array)"
-            />
+            <RoleList roles={experience} />
           </div>
         </div>
       </div>

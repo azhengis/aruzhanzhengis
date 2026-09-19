@@ -10,7 +10,7 @@ export function PhotoMarquee() {
   const items = [...photos, ...photos];
 
   return (
-    <div className="relative h-64 sm:h-72 overflow-hidden group">
+    <div className="relative h-44 sm:h-52 overflow-hidden group">
       <div className="absolute inset-y-0 left-0 flex items-center gap-3 animate-marquee-x group-hover:[animation-play-state:paused]">
         {items.map((photo, i) =>
           photo.src ? (

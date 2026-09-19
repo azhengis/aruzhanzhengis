@@ -4,9 +4,8 @@ import { About } from "@/components/About";
 import { Education } from "@/components/Education";
 import { Career } from "@/components/Career";
 import { Leadership } from "@/components/Leadership";
-import { Skills } from "@/components/Skills";
 import { Projects } from "@/components/Projects";
-import { Connect } from "@/components/Connect";
+import { Contact } from "@/components/Contact";
 import { Footer } from "@/components/Footer";
 
 export default function Home() {
@@ -15,13 +14,12 @@ export default function Home() {
       <Header />
       <main className="flex-1">
         <Hero />
+        <About />
         <Education />
         <Career />
         <Leadership />
-        <Skills />
         <Projects />
-        <About />
-        <Connect />
+        <Contact />
       </main>
       <Footer />
     </div>

@@ -3,18 +3,16 @@ import { RoleList } from "./RoleList";
 
 export function Leadership() {
   return (
-    <section id="leadership" className="py-20 sm:py-28 border-t border-line">
-      <div className="mx-auto max-w-5xl px-6 sm:px-10">
-        <div className="grid sm:grid-cols-[1fr_2fr] gap-8 sm:gap-16">
+    <section id="leadership" className="py-16 sm:py-20">
+      <div className="px-5 sm:px-8">
+        <div className="grid sm:grid-cols-[7rem_1fr] gap-6">
           <div>
-            <p className="text-sm text-muted">Leadership</p>
+            <p className="font-mono text-xs tracking-widest text-muted uppercase text-center">
+              Leadership
+            </p>
           </div>
           <div>
-            <RoleList
-              label="Roles"
-              roles={leadership}
-              emptyLabel="Add roles in lib/content.ts (leadership array)"
-            />
+            <RoleList roles={leadership} />
           </div>
         </div>
       </div>

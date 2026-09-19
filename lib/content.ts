@@ -10,11 +10,17 @@ export const profile = {
   location: "Chicago, IL" as string | null,
   linkedin: "https://www.linkedin.com/in/aruzhan-zhengis/",
   github: "https://github.com/azhengis",
-  // TODO: add an email you want listed publicly, or leave null to hide it
-  email: null as string | null,
+  // Small inline headshot shown next to the hero heading — set to null to
+  // fall back to a wave emoji instead.
+  avatar: "/photos/avatar.jpg" as string | null,
+  email: "azhengis@depaul.edu" as string | null,
   // TODO: add a PDF at /public/resume.pdf and flip this to true
   hasResume: false,
 };
+
+// Small eyebrow badge at the top of the hero (green dot + label). Set to
+// null to hide it entirely.
+export const availability = "Open to internships" as string | null;
 
 // Hero statement — the big text on the homepage. `taglineLead` renders bold
 // and full-color, `taglineRest` renders muted, same size. Draft copy, edit freely.
@@ -22,16 +28,29 @@ export const taglineLead = "I build software.";
 export const taglineRest =
   " I also chase hackathon deadlines, and race personal bests on foot and on skis.";
 
-// About bio — from your LinkedIn About. `bioLead` renders bold and
-// full-color (with the DePaul logo inline), `bioRest` renders muted, same
-// size — same two-tone treatment as the hero statement.
-export const bioLead =
-  "Hi! I'm Aruzhan Zhengis, a senior studying Computer Science at DePaul University";
-export const bioRest =
-  " With experience in hackathons and hands-on development, I'm passionate about app building, AI integration, and project management.";
+// About section copy — one paragraph per array entry, rendered in order.
+export const aboutParagraphs = [
+  "I'm a computer science student at DePaul in Chicago, originally from Kazakhstan. Before I ever wrote a line of code, I spent years playing the dombyra, a traditional Kazakh instrument with two strings. I'm still not sure how that made it onto my career path, but I like that it did.",
+  "Most of my work is around machine learning, from audio and anomaly detection to retrieval systems and tools that deal with real-world data. I like building things and figuring out whether they actually work outside of a notebook.",
+  "Outside of school and work, I'm usually running by the lake, skiing, shooting film, or following Ferrari in F1 a little too closely. I also travel whenever I get the chance.",
+];
 
-// Interests — shown as plain tags in the About section.
-export const interests = ["Skiing", "Running", "Formula 1", "Music"];
+// Orgs shown in the "Affiliated with" strip below the hero. `domain` pulls a
+// favicon the same way company logos do elsewhere on the site.
+export const affiliations = [
+  { name: "DePaul University", domain: "depaul.edu" },
+  { name: "2389 Research Inc.", domain: "2389.ai" },
+  { name: "AWS", domain: "aws.amazon.com" },
+  { name: "NASA Space Apps Challenge", domain: "spaceappschallenge.org" },
+];
+
+// Real, verifiable numbers pulled from the projects/leadership below — not
+// made up. Keep every entry traceable to something in this file.
+export const achievements = [
+  { value: "40,000+", label: "Parcels Analyzed (Lot-to-Life)" },
+  { value: "78%", label: "Model Accuracy (F1 Prediction)" },
+  { value: "600+", label: "Hackathon Participants Led" },
+];
 
 // Photos for the About section's scrolling column. Add files under
 // /public/photos/ and reference them here — leave `src: null` to keep the
@@ -65,12 +84,16 @@ export const education = {
 // Career timeline. `logoDomain` is the org's web domain, used to pull their
 // logo via Clearbit's public logo API (https://logo.clearbit.com/{domain}) —
 // no key required. If a domain has no logo, the image just quietly hides.
+// `bullets` renders as a bulleted list. `tech` renders as a row of named
+// skills (each with a logo icon via TechIcon) below the bullets — leave it
+// off roles where a tech stack doesn't apply (e.g. leadership roles).
 export type Role = {
   org: string;
   title: string;
   period: string;
-  summary?: string;
+  bullets?: string[];
   logoDomain?: string;
+  tech?: string[];
 };
 
 // Paid / research roles — from your resume's Experience section.
@@ -80,24 +103,35 @@ export const experience: Role[] = [
     title: "Software Engineering Intern",
     period: "Jun 2026 — Sept 2026",
     logoDomain: "2389.ai",
-    summary:
-      "Built Postique, a pipeline turning long-form podcast video into publish-ready Instagram, Reels, and LinkedIn posts. Designed the LLM-based clip-analysis layer that scores and ranks the highest-retention moments, and extended the system to a second brand via a brand-voice config layer.",
+    bullets: [
+      "Built Postique, a pipeline turning long-form podcast video into publish-ready Instagram, Reels, and LinkedIn posts.",
+      "Designed the LLM-based clip-analysis layer that scores and ranks the highest-retention moments.",
+      "Extended the system to a second brand via a brand-voice config layer.",
+    ],
+    tech: ["Python"],
   },
   {
     org: "The DePaul AI Institute",
     title: "Research Intern",
     period: "Jun 2026 — Present",
     logoDomain: "depaul.edu",
-    summary:
-      "Built an AI faculty-matching portal over a 1,389-person faculty database, replacing informal referral search. Architected a six-node LangGraph pipeline using SPECTER2 hybrid retrieval with cross-encoder reranking, shipped end-to-end.",
+    bullets: [
+      "Built an AI faculty-matching portal over a 1,389-person faculty database, replacing informal referral search.",
+      "Architected a six-node LangGraph pipeline using SPECTER2 hybrid retrieval with cross-encoder reranking.",
+      "Shipped the system end-to-end.",
+    ],
+    tech: ["Python"],
   },
   {
     org: "DePaul iD Lab",
     title: "Data Scientist",
     period: "Apr 2026 — Present",
     logoDomain: "depaul.edu",
-    summary:
-      "Build and evaluate classification, regression, and anomaly-detection models in Python (pandas, scikit-learn, PyTorch) for active research questions, owning workflows end-to-end from SQL extraction through stakeholder-facing dashboards.",
+    bullets: [
+      "Build and evaluate classification, regression, and anomaly-detection models in Python for active research questions.",
+      "Own workflows end-to-end, from SQL extraction through stakeholder-facing dashboards.",
+    ],
+    tech: ["Python", "pandas", "scikit-learn", "PyTorch"],
   },
 ];
 
@@ -108,52 +142,65 @@ export const leadership: Role[] = [
     title: "Co-Lead Organizer",
     period: "May 2025 — Present",
     logoDomain: "spaceappschallenge.org",
-    summary:
-      "Co-lead one of NASA's largest global chapters, scaling the hackathon to 600+ participants across two days at 1871. Own mentor matching, team formation, and technical programming; pursuing a federal grant to link Chicago, Charlotte, and a Polish partner chapter.",
+    bullets: [
+      "Co-lead one of NASA's largest global chapters, scaling the hackathon to 600+ participants across two days at 1871.",
+      "Own mentor matching, team formation, and technical programming.",
+      "Pursuing a federal grant to link Chicago, Charlotte, and a Polish partner chapter.",
+    ],
   },
   {
     org: "AWS Student Builder Group — DePaul University",
     title: "Group Leader",
     period: "May 2026 — Present",
     logoDomain: "aws.amazon.com",
-    summary:
-      "Lead DePaul's AWS Student Builder Group, selected through AWS's national application process. Host hands-on workshops on core AWS services and partner with faculty and the AWS community team to bring speakers, credits, and resources to campus.",
+    bullets: [
+      "Lead DePaul's AWS Student Builder Group, selected through AWS's national application process.",
+      "Host hands-on workshops on core AWS services.",
+      "Partner with faculty and the AWS community team to bring speakers, credits, and resources to campus.",
+    ],
+    tech: ["AWS"],
   },
   {
     org: "Upsilon Pi Epsilon (CS Honor Society)",
     title: "Treasurer",
     period: "Jul 2026 — Present",
-    summary:
-      "Manage the chapter budget — dues, national induction fees, and event funding — and reconcile spending with the university's student-organization finance office each term.",
+    bullets: [
+      "Manage the chapter budget — dues, national induction fees, and event funding.",
+      "Reconcile spending with the university's student-organization finance office each term.",
+    ],
   },
 ];
 
-// Selected work / projects — from your resume.
+// Selected work / projects — from your resume. `image` is a screenshot at
+// /public/projects/ — leave null to show a placeholder until you add one.
 export type Project = {
   name: string;
   description: string;
   href?: string;
   tag?: string;
+  image?: string | null;
 };
 
 export const projects: Project[] = [
   {
     name: "Lyora",
     description:
-      "Full-stack platform (FastAPI + scikit-learn Isolation Forest, Next.js 14, deployed on Vercel/Render) flagging contamination spikes and infrastructure failures in water-system telemetry. Repositioned from utilities to property insurers and pipeline operators under investor mentorship.",
+      "ML platform flagging contamination spikes and infrastructure failures in water-system telemetry.",
     tag: "AI / Full-stack",
+    image: null,
   },
   {
     name: "Formula 1 Race Outcome Prediction",
-    description:
-      "Engineered 40+ time-series features from 10+ seasons of driver and track data to train Random Forest and XGBoost models — 78% accuracy on unseen races, a 20%+ lift over baseline, with SHAP attribution served via FastAPI.",
+    description: "Random Forest & XGBoost models predicting race outcomes — 78% accuracy.",
     tag: "Time-Series ML",
+    image: null,
   },
   {
     name: "Lot-to-Life",
     description:
-      "Python/SQL ETL pipelines integrating zoning, parcel, and neighborhood data across 40,000+ vacant Chicago parcels in 77 community areas. Engineered 20+ spatial and socioeconomic features scoring redevelopment potential — DemonHacks winner.",
+      "ETL pipeline scoring redevelopment potential across 40,000+ Chicago parcels — hackathon winner.",
     tag: "Data / Urban Analytics",
+    image: null,
   },
 ];
 
