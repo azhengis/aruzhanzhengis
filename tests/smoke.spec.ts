@@ -13,11 +13,11 @@ test("home page loads with no console errors", async ({ page }) => {
   expect(errors).toEqual([]);
 });
 
-test("top bar renders with name and theme toggle", async ({ page }) => {
+test("top bar renders with name and nav", async ({ page }) => {
   await page.goto("/");
   const header = page.getByRole("banner");
   await expect(header.getByText("Aruzhan", { exact: true })).toBeVisible();
-  await expect(header.getByRole("button")).toBeVisible();
+  await expect(header.getByRole("link", { name: "Contact" })).toBeVisible();
 });
 
 test("footer halftone name renders without crashing", async ({ page }) => {

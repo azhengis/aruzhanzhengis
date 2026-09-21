@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { profile } from "@/lib/content";
-import { ThemeToggle } from "./ThemeToggle";
 
 function AboutIcon(props: React.SVGProps<SVGSVGElement>) {
   return (
@@ -88,8 +87,6 @@ export function Header() {
             </a>
           ))}
         </nav>
-
-        <ThemeToggle />
       </div>
     </header>
   );
