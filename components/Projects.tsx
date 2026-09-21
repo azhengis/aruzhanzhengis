@@ -30,6 +30,8 @@ export function Projects() {
                         height={360}
                         className="w-full aspect-video object-cover rounded-xl"
                       />
+                    ) : p.solid ? (
+                      <div className="w-full aspect-video rounded-xl bg-ink" />
                     ) : (
                       <TilePlaceholder
                         label={p.href ? p.name : `Add ${p.name} screenshot`}

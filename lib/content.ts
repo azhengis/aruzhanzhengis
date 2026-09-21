@@ -173,12 +173,16 @@ export const leadership: Role[] = [
 
 // Selected work / projects — from your resume. `image` is a screenshot at
 // /public/projects/ — leave null to show a placeholder until you add one.
+// `solid` shows a plain solid-color tile instead (black in light mode, white
+// in dark mode) for projects with no screenshot to show, e.g. one you'd
+// rather just link to on GitHub.
 export type Project = {
   name: string;
   description: string;
   href?: string;
   tag?: string;
   image?: string | null;
+  solid?: boolean;
 };
 
 export const projects: Project[] = [
@@ -200,9 +204,9 @@ export const projects: Project[] = [
   },
   {
     name: "Formula 1 Race Outcome Prediction",
-    description: "Random Forest & XGBoost models predicting race outcomes — 78% accuracy.",
+    description: "Random Forest & XGBoost models predicting race outcomes.",
     tag: "Time-Series ML",
-    image: null,
+    image: "/projects/f1-prediction.jpg",
   },
   {
     name: "Lot-to-Life",
@@ -210,6 +214,8 @@ export const projects: Project[] = [
       "ETL pipeline scoring redevelopment potential across 40,000+ Chicago parcels — hackathon winner.",
     tag: "Data / Urban Analytics",
     image: null,
+    solid: true,
+    href: profile.github,
   },
 ];
 
