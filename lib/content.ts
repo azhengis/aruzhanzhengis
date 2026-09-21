@@ -183,11 +183,20 @@ export type Project = {
 
 export const projects: Project[] = [
   {
+    name: "Postique",
+    description:
+      "Autonomous AI marketing system that researches, writes, and publishes social content for 2389 Research.",
+    tag: "AI / Automation",
+    image: "/projects/postique.jpg",
+    href: "https://postique.fly.dev/drafts",
+  },
+  {
     name: "Lyora",
     description:
       "ML platform flagging contamination spikes and infrastructure failures in water-system telemetry.",
     tag: "AI / Full-stack",
-    image: null,
+    image: "/projects/lyora.jpg",
+    href: "https://lyora-lake.vercel.app",
   },
   {
     name: "Formula 1 Race Outcome Prediction",
@@ -201,6 +210,27 @@ export const projects: Project[] = [
       "ETL pipeline scoring redevelopment potential across 40,000+ Chicago parcels — hackathon winner.",
     tag: "Data / Urban Analytics",
     image: null,
+  },
+];
+
+// Writing, press mentions, and LinkedIn posts — anything written by or about
+// you that's worth surfacing. `source` is the publication/platform name.
+export type Post = {
+  title: string;
+  source: string;
+  date?: string;
+  excerpt?: string;
+  href: string;
+};
+
+export const posts: Post[] = [
+  {
+    title: "Postique: AI Marketing Employee",
+    source: "2389 Research",
+    date: "Aug 2026",
+    excerpt:
+      "Building an autonomous AI system that researches, writes, and publishes social content — learning from feedback along the way.",
+    href: "https://2389.ai/research/writing/postique/",
   },
 ];
 
