@@ -63,7 +63,7 @@ export const photos = [
   { src: "/photos/f1-1.jpg" as string | null, alt: "Formula 1", width: 1333, height: 1000 },
   { src: "/photos/run-2.jpg" as string | null, alt: "Running", width: 1499, height: 1000 },
   { src: "/photos/f1-2.jpg" as string | null, alt: "Formula 1", width: 750, height: 1000 },
-  { src: null as string | null, alt: "Music", width: 1200, height: 1600 },
+  { src: "/photos/horse-1.jpg" as string | null, alt: "Horseback riding", width: 750, height: 1000 },
 ];
 
 // Education — from your resume.
