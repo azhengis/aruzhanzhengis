@@ -221,12 +221,15 @@ export const projects: Project[] = [
 
 // Writing, press mentions, and LinkedIn posts — anything written by or about
 // you that's worth surfacing. `source` is the publication/platform name.
+// `image` is a preview thumbnail at /public/writing/ — often the article's
+// own Open Graph/social-card image — leave null for a plain text card.
 export type Post = {
   title: string;
   source: string;
   date?: string;
   excerpt?: string;
   href: string;
+  image?: string | null;
 };
 
 export const posts: Post[] = [
@@ -237,6 +240,7 @@ export const posts: Post[] = [
     excerpt:
       "Building an autonomous AI system that researches, writes, and publishes social content — learning from feedback along the way.",
     href: "https://2389.ai/research/writing/postique/",
+    image: "/writing/postique.jpg",
   },
 ];
 

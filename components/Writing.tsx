@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { posts } from "@/lib/content";
 import { TilePlaceholder } from "./Placeholder";
 
@@ -23,18 +24,34 @@ export function Writing() {
                     href={post.href}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="group block rounded-xl border border-line p-5 hover:border-ink transition-colors"
+                    className="group block rounded-xl border border-line overflow-hidden hover:border-ink transition-colors"
                   >
-                    <p className="text-xs text-muted uppercase tracking-wide">
-                      {post.source}
-                      {post.date && <span> · {post.date}</span>}
-                    </p>
-                    <p className="font-semibold mt-2 group-hover:text-accent transition-colors">
-                      {post.title}
-                    </p>
-                    {post.excerpt && (
-                      <p className="text-sm text-ink-soft mt-1.5">{post.excerpt}</p>
+                    {post.image ? (
+                      <Image
+                        src={post.image}
+                        alt={post.title}
+                        width={640}
+                        height={320}
+                        className="w-full aspect-[2/1] object-cover"
+                      />
+                    ) : (
+                      <TilePlaceholder
+                        label={`Add ${post.title} preview`}
+                        className="w-full aspect-[2/1] rounded-none border-x-0 border-t-0"
+                      />
                     )}
+                    <div className="p-5">
+                      <p className="text-xs text-muted uppercase tracking-wide">
+                        {post.source}
+                        {post.date && <span> · {post.date}</span>}
+                      </p>
+                      <p className="font-semibold mt-2 group-hover:text-accent transition-colors">
+                        {post.title}
+                      </p>
+                      {post.excerpt && (
+                        <p className="text-sm text-ink-soft mt-1.5">{post.excerpt}</p>
+                      )}
+                    </div>
                   </a>
                 ))}
               </div>
